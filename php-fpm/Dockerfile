@@ -1020,7 +1020,7 @@ RUN if [ ${DOWNGRADE_OPENSSL_TLS_AND_SECLEVEL} = true ]; then \
 ENV NEWRELIC_FILENAME=newrelic-php5-7.4.0.198-linux-musl.tar.gz
 ENV ENVIRONMENT "chris"
 ENV NR_INSTALL_SILENT true
-ENV NR_INSTALL_KEY "0701385fc8aab6929d8d000252a576b7bf39314c"
+ENV NR_INSTALL_KEY ""
 
 RUN cd /opt \
   && apt-get install -y wget --no-install-recommends \
@@ -1030,7 +1030,7 @@ RUN cd /opt \
 	&& apt-get update \
 	&& apt-get install -y newrelic-php5 --no-install-recommends \
 	&& newrelic-install install \
-  && sed -i -e "s/REPLACE_WITH_REAL_KEY/0701385fc8aab6929d8d000252a576b7bf39314c/" \
+  && sed -i -e "s/REPLACE_WITH_REAL_KEY/" \
   -e "s/newrelic.appname[[:space:]]=[[:space:]].*/newrelic.appname=\"chris\"/" \
   -e '$anewrelic.distributed_tracing_enabled=true' \
   $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
