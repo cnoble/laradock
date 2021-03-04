@@ -256,11 +256,17 @@ RUN if [ ${INSTALL_PHPDBG} = true ]; then \
 ARG INSTALL_BLACKFIRE=false
 
 RUN if [ ${INSTALL_XDEBUG} = false -a ${INSTALL_BLACKFIRE} = true ]; then \
-    version=$(php -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
-    && curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/$version \
-    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \
-    && mv /tmp/blackfire-*.so $(php -r "echo ini_get('extension_dir');")/blackfire.so \
-    && printf "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707\n" > $PHP_INI_DIR/conf.d/blackfire.ini \
+    apt-get install -y wget --no-install-recommends \
+    && apt-get install -y apt-transport-https gnupg \
+    && wget -q -O - https://packages.blackfire.io/gpg.key | apt-key add - \
+    && sh -c 'echo "deb http://packages.blackfire.io/debian any main" > /etc/apt/sources.list.d/blackfire.list' \
+    && apt-get update \
+    && apt-get install blackfire-php \
+    #version=$(php -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
+    #&& curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/$version \
+    #&& tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \
+    #&& mv /tmp/blackfire-*.so $(php -r "echo ini_get('extension_dir');")/blackfire.so \
+    #&& printf "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707\n" > $PHP_INI_DIR/conf.d/blackfire.ini \
 ;fi
 
 ###########################################################################
@@ -1008,7 +1014,26 @@ RUN if [ ${DOWNGRADE_OPENSSL_TLS_AND_SECLEVEL} = true ]; then \
     && \
     sed -i 's,^\(CipherString[ ]*=\).*,\1'DEFAULT@SECLEVEL=1',g' /etc/ssl/openssl.cnf\
 ;fi
+###########################################################################
+# New Relic:
+###########################################################################
+ENV NEWRELIC_FILENAME=newrelic-php5-7.4.0.198-linux-musl.tar.gz
+ENV ENVIRONMENT "chris"
+ENV NR_INSTALL_SILENT true
+ENV NR_INSTALL_KEY "0701385fc8aab6929d8d000252a576b7bf39314c"
 
+RUN cd /opt \
+  && apt-get install -y wget --no-install-recommends \
+  && apt-get install -y apt-transport-https gnupg \
+	&& wget -O - https://download.newrelic.com/548C16BF.gpg | apt-key add - \
+	&& sh -c 'echo "deb http://apt.newrelic.com/debian/ newrelic non-free" > /etc/apt/sources.list.d/newrelic.list' \
+	&& apt-get update \
+	&& apt-get install -y newrelic-php5 --no-install-recommends \
+	&& newrelic-install install \
+  && sed -i -e "s/REPLACE_WITH_REAL_KEY/0701385fc8aab6929d8d000252a576b7bf39314c/" \
+  -e "s/newrelic.appname[[:space:]]=[[:space:]].*/newrelic.appname=\"chris\"/" \
+  -e '$anewrelic.distributed_tracing_enabled=true' \
+  $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
 ###########################################################################
 # Check PHP version:
 ###########################################################################

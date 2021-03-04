@@ -394,6 +394,21 @@ services:
         - frontend
         - backend
 
+### phabricator ########################################
+    phabricator:
+      build:
+        context: ./phabricator
+        args:
+          - PHABRICATOR_HOST=phabricator.test
+          - MARIADB_HOST=mysql
+          - MARIADB_USER=phabricator
+          - MARIADB_PASSWORD=phabricator
+      ports:
+        - "443:4443"
+        - "80:8585"
+      volumes:
+        - ${DATA_PATH_HOST}/phabricator_data:/bitnami
+
 ### Blackfire ########################################
     blackfire:
       image: blackfire/blackfire
